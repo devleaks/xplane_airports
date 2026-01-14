@@ -82,8 +82,13 @@ class RowCode(IntEnum):
     START_LOCATION_EXT	= 1301
     METADATA			= 1302
 
-    TRUCK_PARKING		= 1400
-    TRUCK_DESTINATION	= 1401
+    TRUCK_PARKING         = 1400
+    TRUCK_DESTINATION	  = 1401
+    CUSTOM_TRUCK_OBJECTS  = 1402
+
+    ACTIVE_JETWAY         = 1500
+    CUSTOM_JETWAY         = 1501
+    CUSTOM_JETWAY_OBJECTS = 1502
 
     def __int__(self):
         return self.value
