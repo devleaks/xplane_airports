@@ -288,6 +288,59 @@ class TaxiRouteNetwork:
 
 
 @dataclass
+class RoadNode:
+    """
+    A node in a road network.
+    Every node must be part of one or more edges.
+    """
+    id: int     # The node identifier (must be unique within an airport)
+    lon: float  # Node's longitude
+    lat: float  # Node's latitude
+
+
+@dataclass
+class RoadEdge:
+    """
+    An edge in a road network.
+    Every edge is defined by its two node endpoints.
+    Edges may support one- or two-way traffic.
+    """
+    node_begin: int  # The identifier of the beginning node
+    node_end: int    # The identifier of the terminal node
+    name: str        # The road identifier, may be the empty string
+    one_way: bool = False  # If false, it supports two-way traffic
+
+    @staticmethod
+    def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> 'RoadEdge':
+        name = " ".join(tokens[4:]) if len(tokens) > 4 else ""
+        edge = RoadEdge(name=name, node_begin=int(tokens[1]), node_end=int(tokens[2]), one_way=tokens[3] == 'oneway')
+        return edge
+
+
+@dataclass
+class RoadNetwork:
+    nodes: Dict[int, RoadNode] = field(default_factory=dict)
+    edges: List[RoadEdge] = field(default_factory=list)
+
+    @staticmethod
+    def from_lines(apt_dat_lines: Collection[AptDatLine]) -> 'RoadNetwork':
+        return RoadNetwork.from_tokenized_lines([line.tokens for line in apt_dat_lines if not line.is_ignorable()])
+
+    @staticmethod
+    def from_tokenized_lines(tokenized_lines: Collection[List[Union[RowCode, str]]]) -> 'RoadNetwork':
+        nodes = {
+            node.id: node
+            for node in map(lambda tokens: RoadNode(id=int(tokens[4]), lon=float(tokens[2]), lat=float(tokens[1])),
+                            filter(lambda line: line[0] == RowCode.TAXI_ROUTE_NODE, tokenized_lines))
+        }
+        edges = [RoadEdge.from_tokenized_line(tokens)
+                 for tokens in tokenized_lines
+                 if tokens[0] == RowCode.TAXI_ROUTE_ROAD]
+        return RoadNetwork(nodes=nodes, edges=edges)
+
+
+
+@dataclass
 class Airport:
     """A single airport from an apt.dat file."""
     from_file: Optional[Path] = None  # Path to the apt.dat file from which this airport was read
@@ -456,6 +509,10 @@ class Airport:
     @apt_cached_property
     def taxi_network(self) -> TaxiRouteNetwork:
         return TaxiRouteNetwork.from_tokenized_lines(self.tokenized_lines)
+
+    @apt_cached_property
+    def road_network(self) -> RoadNetwork:
+        return RoadNetwork.from_tokenized_lines(self.tokenized_lines)
 
     @staticmethod
     def from_lines(dat_lines: List[str], from_file_name: Optional[Path] = None, xplane_version: int = 1100) -> 'Airport':
