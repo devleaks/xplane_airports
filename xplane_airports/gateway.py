@@ -22,32 +22,110 @@ class GatewayFeature(IntEnum):
     Note that these are subject to frequent addition/removal/change;
     only a few are guaranteed to be stable.
     """
-    HasATCFlow = 1  # guaranteed stable
-    HasTaxiRoute = 2  # guaranteed stable
-    HasNavaidConflict = 3
-    AlwaysFlatten = 4
-    HasLogTxtIssue = 5
-    LRInternalUse = 6  # guaranteed stable
-    ExcludeSubmissions = 7  # guaranteed stable
-    HasGroundRoutes = 8  # guaranteed stable
-    TerrainIncompatible = 10
-    RunwayNumberingOrLengthFix = 11
-    AlwaysFlattenIneffective = 12
-    MajorAirport = 15
-    TerrainIncompatibleAtPerimeter = 17
-    RunwayNumberingFix = 18
-    IconicAirport = 19
-    FloatingRunway = 20
-    GroundRoutesCertified = 29
-    FacadeInjection = 31
-    ScenicAirport = 32
-    MisusedGroundPolygons = 35
-    Top30 = 36
-    Top50 = 37
-    RunwayInWater = 38
-    RunwayUnusable = 40
-    TerrainMeshMissing = 41
-    LowResolutionTerrainPolygons = 42
+    # ORIGINAL
+    # HasATCFlow = 1  # guaranteed stable
+    # HasTaxiRoute = 2  # guaranteed stable
+    # HasNavaidConflict = 3
+    # AlwaysFlatten = 4
+    # HasLogTxtIssue = 5
+    # LRInternalUse = 6  # guaranteed stable
+    # ExcludeSubmissions = 7  # guaranteed stable
+    # HasGroundRoutes = 8  # guaranteed stable
+    # TerrainIncompatible = 10
+    # RunwayNumberingOrLengthFix = 11
+    # AlwaysFlattenIneffective = 12
+    # MajorAirport = 15
+    # TerrainIncompatibleAtPerimeter = 17
+    # RunwayNumberingFix = 18
+    # IconicAirport = 19
+    # FloatingRunway = 20
+    # GroundRoutesCertified = 29
+    # FacadeInjection = 31
+    # ScenicAirport = 32
+    # MisusedGroundPolygons = 35
+    # Top30 = 36
+    # Top50 = 37
+    # RunwayInWater = 38
+    # RunwayUnusable = 40
+    # TerrainMeshMissing = 41
+    # LowResolutionTerrainPolygons = 42
+
+    # https://gateway.x-plane.com/api
+    # ON 16-JUN-2026
+    HasATCFlow = 1  # Has ATC Flow
+    HasTaxiRoute = 2  # Has Taxi Route
+    HasLogtxtIssue = 5  # Has Log.txt Issue, This airport causes an exception in X-Plane, resulting in an entry in the log.txt file
+    LRInternalUse = 6  # LR Internal Use, An outstanding airport that is suitable for internal, or external public relations purposes
+    HasGroundRoutes = 8  # Has Ground Routes
+    RunwayNumberingLengthFix = 11  # Runway Numbering/Length Fix, No longer used as this is now validated in WED
+    RunwayNumberingFix = 18  # Runway Numbering Fix, No longer used as this is now validated in WED
+    FloatingRunway = 20  # Floating Runway, One or more runways at this airport is floating above the ground due to a mesh anomaly
+    GroundRoutesCertified = 29  # Ground Routes Certified
+    MisusedDrapedSignPolygons = 35  # Misused Draped Sign Polygons, Draped sign polygons have been used for other than their intended purpose
+    RunwayinWater = 38  # Runway in Water, All or part of a land-based runway is in the water
+    RunwayUnusableXP11 = 40  # Runway Unusable (XP11), Runway features a mesh anomaly that makes it impossible to conduct take-off and landing operations
+    LowResTerrainPolygonsXP11 = 42  # Low Res Terrain Polygons (XP11), Blurry terrain polygons have been used
+    FixFragmentedRoadNetworkXP11 = 43  # Fix Fragmented Road Network XP11, One or more isolated road-network segments are appearing at this airport, requiring the injection of an exclusion
+    OverlapWronglocation = 47  # Overlap - Wrong location, This airport overlaps another airport because it is in the wrong location
+    BoatInjection = 51  # Boat Injection, A very nice airport that could benefit from an injection of boats
+    TunnelInjection = 52  # Tunnel Injection, Aircraft or ground traffic is passing through a facade that needs a tunnel entrance (corridor)
+    ParkingLotInjection = 55  # Parking Lot Injection, A very nice airport that could benefit from the injection of custom parking lots
+    EmbankmentInjection = 57  # Embankment Injection, A very nice airport that could benefit from an injection of the embankment facade
+    PierInjection = 58  # Pier Injection, A very nice airport that could benefit from the injection of one or more pier facades
+    RunwayisSteppedXP11 = 59  # Runway is Stepped (XP11), Runway features a mesh anomaly that makes it difficult to conduct take-off and landing operations
+    CustomRunwayMarkings = 62  # Custom Runway Markings, Airports that features one or more runways using custom markings created by the artist
+    RunwayMisaligned = 64  # Runway Misaligned
+    FacadeInjection = 65  # Facade Injection, A very nice airport that could benefit from the injection of newer facades (see: https://docs.google.com/document/d/1kkSIFBeqfCfcCgEnrZ3D87rygQ3uMG2JOPebOawLtaU)
+    GroundMarkingsInjection = 67  # Ground Markings Injection, A very nice airport that could benefit from the injection of more or improved ground markings
+    JetwayKitInjection = 70  # Jetway Kit Injection, A very nice airport that could benefit from the injection of Jetway Kit facades
+    ChallengedbyArtist = 71  # Challenged by Artist, Artist has requested the moderator review a previous decision for this airport
+    Structuresdonotmatchimagery = 75  # Structure(s) do not match imagery, One or more 3D assets is not an accurate interpretation of the underlying ESRI imagery
+    Hasorphanedtaxiway = 78  # Has orphaned taxiway
+    MisusedTerrainPolygons = 79  # Misused Terrain Polygons, Terrain polygons have been used to correct anomalies with the XP11 mesh. Airport should be re-inspected with XP12 mesh.
+    Roadnetworkduplication = 80  # Road network duplication, One or more custom roads overlays a segment of default road network.
+    XP12preopening = 83  # XP12 pre-opening, Airport features hand curated XP12 assets
+    Betterthananewersubmission = 84  # Better than a newer submission.
+    HasRoadNetwork = 86  # Has Road Network, The artist has edited the road network
+    TemporaryTerrainPolygons = 87  # Temporary Terrain Polygon(s), Contains temporary terrain polygon that is not required after boundary is applied to default mesh.
+    RunwayUnusableXP12 = 88  # Runway Unusable (XP12), Runway features a mesh anomaly that makes it impossible to conduct take-off and landing operations
+    RunwayisSteppedXP12 = 89  # Runway is Stepped (XP12), Runway features a mesh anomaly that makes it difficult to conduct take-off and landing operations
+    Roadsmadewithpolygons = 90  # Roads made with polygons, Roads have been made using draped polygons, where better tech exists (Road network tool or line assets).
+    ReviewinSim = 92  # Review in Sim, Approval is temporary until airport is rendered in XP and reviewed.
+    FixFragmentedRoadNetworkXP12 = 93  # Fix Fragmented Road Network XP12, One or more isolated road-network segments are appearing at this airport, requiring the injection of an exclusion
+    OversizedTerrainPolygons = 94  # Oversized Terrain Polygon(s), Features one or more large terrain polygon that is a candidate for deletion at the next mesh cut.
+    ContainsFlattenPolygon = 95  # Contains Flatten Polygon, Internal use only
+
+
+class AirportAttribute(IntEnum):
+    """
+    We store a number of annotations about individual airports.
+    These describe certain properties of the airports, and are available for search when searching “All Airports.”
+    In addition, they are sometimes used internally by the X-Plane team to prioritize airports for future development.
+    An individual airport may have some, all, or none of the attributes we track.
+    The available attributes annotations are:
+    """
+    NAVAIDIncursion = 3  # NAVAID Incursion, A navigation aid incursion is present at this airport. Either the airport, or the navaid, are mis-located.
+    AlwaysFlattenXP11 = 4  # Always Flatten (XP11), Always Flatten has been set for this submission
+    ExcludeSubmissions = 7  # Exclude Submissions
+    TerrainIncompatibleXP11 = 10  # Terrain Incompatible (XP 11), All of the terrain at this airport has the wrong texture - probably because the airport had no boundary at the time the mesh was cut
+    AlwaysFlattenIneffectiveXP11 = 12  # Always Flatten Ineffective (XP 11), Always Flatten has been set for this submission but failed to correct the mesh
+    MajorAirport = 15  # Major Airport, A major international airport
+    TerrainIncompatibleatPerimeterXP11 = 17  # Terrain Incompatible at Perimeter (XP 11), Portions of the terrain at this airport have the wrong texture - probably because the airport has moved from the original boundary
+    IconicAirport = 19  # Iconic Airport, An iconic airport for flight simmers
+    ScenicAirport = 32  # Scenic Airport, An airport located in a region that has outstanding scenic properties
+    Top30 = 36  # Top 30, One of the top 30 largest airports in the world
+    Top50 = 37  # Top 50, One of the top 50 largest airports in the world
+    TerrainMeshMissingorCompromised = 41  # Terrain Mesh Missing or Compromised, Terrain mesh is missing in an area where it should be present, or it is present but not plausible
+    TerrainInjection = 45  # Terrain Injection, No longer used
+    OverlapLegitimate = 46  # Overlap - Legitimate, This airport legitimately overlaps another airport
+    VeryLargeAirport = 49  # Very Large Airport, A very large airport that requires an exception to be coded in WED in order to pass validation
+    SceneryTileTearingXP11 = 54  # Scenery Tile Tearing (XP11), Mesh scenery tiles are tearing at or near this location
+    TerrainMeshImpactsWaterOps = 60  # Terrain Mesh Impacts Water Ops, Terrain mesh incursion on a water body used for seaplane operations
+    ClosedAirport = 81  # Closed Airport, An airport known to be closed, or reported as closed.
+    AirportLocationOffsetAllowedXP11 = 82  # Airport Location Offset Allowed (XP11), Airport location offset allowed to avoid conflict with autogen.
+    Runwayoffsetfromactuallocation = 83  # Runway offset from actual location, Runway cannot be placed in correct location due to bad CIFP data
+    DemoAreaAirport = 84  # Demo Area Airport, Airport featured in one of the XP12 demo areas.
+    TerrainMeshMissingorCompromisedXP12 = 87  # Terrain Mesh Missing or Compromised XP12, Terrain mesh missing, not plausible, or not suitable for aircraft ops in XP12.
 
 
 @dataclass
