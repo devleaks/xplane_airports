@@ -217,6 +217,7 @@ class TaxiRouteNode:
     id: int     # The node identifier (must be unique within an airport)
     lon: float  # Node's longitude
     lat: float  # Node's latitude
+    usage: str = ""
 
 
 class IcaoWidth(Enum):
@@ -278,7 +279,7 @@ class TaxiRouteNetwork:
     def from_tokenized_lines(tokenized_lines: Collection[List[Union[RowCode, str]]]) -> 'TaxiRouteNetwork':
         nodes = {
             node.id: node
-            for node in map(lambda tokens: TaxiRouteNode(id=int(tokens[4]), lon=float(tokens[2]), lat=float(tokens[1])),
+            for node in map(lambda tokens: TaxiRouteNode(id=int(tokens[4]), lon=float(tokens[2]), lat=float(tokens[1]), usage=tokens[3]),
                             filter(lambda line: line[0] == RowCode.TAXI_ROUTE_NODE, tokenized_lines))
         }
         edges = [TaxiRouteEdge.from_tokenized_line(tokens)
@@ -345,7 +346,7 @@ class Airport:
     """A single airport from an apt.dat file."""
     from_file: Optional[Path] = None  # Path to the apt.dat file from which this airport was read
     raw_lines: List[str] = field(default_factory=list)  # The complete text of the portion of the apt.dat file pertaining to this airport, with leading & trailing whitespace removed
-    xplane_version: int = 1100    # The version of X-Plane apt.dat spec (1050, 1100, 1130, etc.) used by the airport
+    xplane_version: int = 1200    # The version of X-Plane apt.dat spec (1050, 1100, 1130, etc.) used by the airport
     # An intermediate tokenization, used for speed of parsing.
     # The first element is the RowCode of the line, remaining elements (if any) are strings.
     tokenized_lines: List[List[Union[RowCode, str]]] = field(default_factory=list)
@@ -515,7 +516,7 @@ class Airport:
         return RoadNetwork.from_tokenized_lines(self.tokenized_lines)
 
     @staticmethod
-    def from_lines(dat_lines: List[str], from_file_name: Optional[Path] = None, xplane_version: int = 1100) -> 'Airport':
+    def from_lines(dat_lines: List[str], from_file_name: Optional[Path] = None, xplane_version: int = 1200) -> 'Airport':
         """
         :param dat_lines: The lines of the apt.dat file
         :param from_file_name: The name of the apt.dat file you read this airport in from
@@ -525,7 +526,7 @@ class Airport:
         return Airport(from_file_name, dat_lines, xplane_version, tokenized)
 
     @staticmethod
-    def from_str(file_text: str, from_file_name: Optional[PathLike] = None, xplane_version: int = 1100) -> 'Airport':
+    def from_str(file_text: str, from_file_name: Optional[PathLike] = None, xplane_version: int = 1200) -> 'Airport':
         """
         :param file_text: The portion of the apt.dat file text that specifies this airport
         :param from_file_name: The name of the apt.dat file you read this airport in from
@@ -539,7 +540,7 @@ class AptDat:
     A container class for ``Airport`` objects.
     Parses X-Plane's gigantic apt.dat files, which may have data on hundreds of airports.
     """
-    def __init__(self, path_to_file: Optional[PathLike] = None, xplane_version: int = 1100):
+    def __init__(self, path_to_file: Optional[PathLike] = None, xplane_version: int = 1200):
         """
         :param path_to_file Location of the apt.dat (or ICAO.dat) file to read from disk
         :param xplane_version The version of the apt.dat spec used by this file---overridden by any file we read (assuming it has a proper header).
