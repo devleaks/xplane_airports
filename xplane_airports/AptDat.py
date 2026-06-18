@@ -239,6 +239,83 @@ class IcaoWidth(Enum):
         raise LookupError(f'No instance of {cls} matches "{string}"')
 
 
+
+class Accessories:
+    """Find all lines with line code in accessories related to a close, previous line with code main.
+
+    Example:
+    ...
+    1202 1007 609 twoway taxiway_E B6
+    1202 1022 1023 twoway taxiway_F B 9
+    1204 departure 07L,25R
+    1204 arrival 07L,25R
+    1204 ils 07L,25R
+    1202 627 1022 twoway taxiway_F B 9
+    1204 departure 07L,25R
+    1204 arrival 07L,25R
+    1204 ils 07L,25R
+    1202 610 847 twoway taxiway_E E5
+    ...
+    will build with main = 1202 (edges) and accessories = [ 1204 (active edges) ]:
+
+    1007  609: nothing
+
+    1022 1023:
+        1204 departure 07L,25R  # lines that relate to above 1202 1022 1023 twoway taxiway_F B 9
+        1204 arrival 07L,25R
+        1204 ils 07L,25R
+
+     627 1022:
+        1204 departure 07L,25R  # lines that relate to above 1202 627 1022 twoway taxiway_F B 9
+        1204 arrival 07L,25R
+        1204 ils 07L,25R
+
+     610  847: Nothing
+    """
+
+    @staticmethod
+    def from_tokenized_lines(tokenized_lines: List[List[Union[RowCode, str]]], main: RowCode, accessories: List[RowCode]) -> Dict[List[Union[RowCode, str]], List[List[Union[RowCode, str]]]]:
+        lines_with_accessories = {}
+        main_line = None
+        i = 0
+        while i < len(tokenized_lines):
+            tokens = tokenized_lines[i]
+            if tokens[0] != main:
+                i += 1
+                continue
+            main_line = tokens
+            i += 1
+            if i < len(tokenized_lines):
+                tokens = tokenized_lines[i]
+                accessory_lines = []
+                while i < len(tokenized_lines) and main_line is not None:
+                    tokens = tokenized_lines[i]
+                    if tokens[0] in accessories:
+                        accessory_lines.append(tokens)
+                    elif tokens[0] == main:  # finished, start new one
+                        if len(accessory_lines) > 0:
+                            lines_with_accessories["-".join([str(k) for k in main_line[1:3]])] = accessory_lines
+                        main_line = None
+                    i += 1
+        return lines_with_accessories
+
+
+@dataclass
+class ActiveEdge:
+    """
+    Identifies an edge as in a runway active zone.
+    """
+    zone: str  # departure, arrival, ils
+    runways: str  # up to 4 runways
+
+    @staticmethod
+    def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> 'ActiveEdge':
+        return ActiveEdge(zone=tokens[1], runways=tokens[2])
+
+    def runway_list(self) -> List[str]:
+        return self.runways.split(",")
+
+
 @dataclass
 class TaxiRouteEdge:
     """
@@ -252,6 +329,7 @@ class TaxiRouteEdge:
     is_runway: bool = False  # If false, it's a taxiway
     one_way: bool = False  # If false, it supports two-way traffic
     icao_width: Optional[IcaoWidth] = None  # The width class of the taxiway; unknown if None
+    active_zones: Union[List[ActiveEdge], None] = None
 
     @staticmethod
     def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> 'TaxiRouteEdge':
@@ -533,6 +611,12 @@ class Airport:
         """
         cleaned_lines = list(filter(lambda l: not AptDatLine.raw_is_ignorable(l), file_text.splitlines()))
         return Airport.from_lines(cleaned_lines, from_file_name, xplane_version)
+
+    def inject_active_zones(self):
+        a = Accessories.from_tokenized_lines(tokenized_lines=self.tokenized_lines, main=RowCode.TAXI_ROUTE_EDGE, accessories=[RowCode.TAXI_ROUTE_HOLD])
+        for e in self.taxi_network.edges:
+            k = f"{e.node_begin}-{e.node_end}"
+            e.active_zones = [ActiveEdge(zone=t[1], runways=t[2]) for t in a[k]] if k in a else None
 
 
 class AptDat:
