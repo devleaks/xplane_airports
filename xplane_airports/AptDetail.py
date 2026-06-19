@@ -4,14 +4,15 @@ Tools for reading, inspecting, and manipulating X-Plane’s airport (apt.dat) fi
 import itertools
 from contextlib import suppress
 from dataclasses import dataclass, field
-from operator import attrgetter
+from functools import reduce
+from operator import attrgetter, add
 from os import PathLike
 import re
 from enum import IntEnum, Enum
 from pathlib import Path
 from typing import Callable, Collection, Dict, Iterable, List, Optional, Union, FrozenSet
 from xplane_airports._cached_prop import apt_cached_property
-from xplane_airports.AptDat import IcaoWidth, RowCode, AptDatLine, Airport
+from xplane_airports.AptDat import IcaoWidth, RowCode, RunwayType, runway_codes, AptDatLine, Airport
 
 # ##################################
 #
@@ -49,9 +50,12 @@ class Accessories:
 
      610  847: Nothing
     """
+    @staticmethod
+    def key(tokens: List[Union[RowCode, str]], key: List[int] = [1, 3], sep: str = "-") -> str:
+        return sep.join([str(k) for k in tokens[key[0]:key[1]]])
 
     @staticmethod
-    def from_tokenized_lines(tokenized_lines: List[List[Union[RowCode, str]]], main: RowCode, accessories: List[RowCode]) -> Dict[List[Union[RowCode, str]], List[List[Union[RowCode, str]]]]:
+    def from_tokenized_lines(tokenized_lines: List[List[Union[RowCode, str]]], main: RowCode, accessories: List[RowCode], key: List[int] = [1, 3]) -> Dict[List[Union[RowCode, str]], List[List[Union[RowCode, str]]]]:
         lines_with_accessories = {}
         main_line = None
         i = 0
@@ -71,7 +75,8 @@ class Accessories:
                         accessory_lines.append(tokens)
                     elif tokens[0] == main:  # finished, start new one
                         if len(accessory_lines) > 0:
-                            lines_with_accessories["-".join([str(k) for k in main_line[1:3]])] = accessory_lines
+                            k = Accessories.key(tokens=main_line, key=key)
+                            lines_with_accessories[k] = accessory_lines
                         main_line = None
                     i += 1
         return lines_with_accessories
@@ -154,7 +159,6 @@ class TruckParking:
     """
     RowCode.TRUCK_PARKING
     """
-    id: int     # The node identifier (must be unique within an airport)
     lon: float  # Node's longitude
     lat: float  # Node's latitude
     heading: float  # Heading (true) of the OBJ positioned at this location
@@ -164,7 +168,8 @@ class TruckParking:
 
     @staticmethod
     def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> 'TruckParking':
-        return TruckParking(id=tokens[1], lat=tokens[2], lon=tokens[3], heading=tokens[4], type_str=tokens[5], type_len=tokens[6], name=tokens[7])
+        name = " ".join(tokens[6:]) if len(tokens) > 6 else ""
+        return TruckParking(lat=tokens[1], lon=tokens[2], heading=tokens[3], type_str=tokens[4], type_len=tokens[5], name=name)
 
 
 @dataclass
@@ -172,17 +177,16 @@ class TruckDestination:
     """
     RowCode.TRUCK_DESTINATION
     """
-    id: int     # The node identifier (must be unique within an airport)
     lon: float  # Node's longitude
     lat: float  # Node's latitude
     heading: float  # Heading (true) of the OBJ positioned at this location
-    types_str: str  # Truck types allowed to end up at this destination. Pipe separated list.
+    types_str: list  # Truck types allowed to end up at this destination. Pipe separated list.
     name: str  # Name of destination
 
     @staticmethod
     def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> 'TruckDestination':
-        name = " ".join(tokens[6:])
-        return TruckDestination(id=tokens[1], lat=tokens[2], lon=tokens[3], heading=tokens[4], types_str=tokens[5], name=name)
+        name = " ".join(tokens[5:]) if len(tokens) > 5 else ""
+        return TruckDestination(lat=tokens[1], lon=tokens[2], heading=tokens[3], types_str=tokens[4].split("|"), name=name)
 
 
 @dataclass
@@ -190,12 +194,11 @@ class StartupLocation:
     """
     RowCode.START_LOCATION_NEW, START_LOCATION_EXT
     """
-    id: int     # The node identifier (must be unique within an airport)
     lon: float  # Node's longitude
     lat: float  # Node's latitude
     heading: float  # Heading (true) of the OBJ positioned at this location
     type_str: str  # Type of location (gate, hangar, misc or tie-down)
-    acfs: List[str]  # Airplane types that can use this location. Pipe separated list.
+    aircraft_types: List[str]  # Airplane types that can use this location. Pipe separated list.
     name: str  # Unique name of location
     icao_code: IcaoWidth  # ICAO width code
     oper_type: str  # Operation types (none, general_aviation, airline, cargo, military)
@@ -206,7 +209,7 @@ class StartupLocation:
         icao_code = None
         oper_type = "none"
         airline = ""
-        k = f"{tokens[1]}-{tokens[2]}"
+        k = Accessories.key(tokens=tokens)
         if k in accessories:
             v = accessories[k][0]
             icao_code = IcaoWidth(v[1].upper()) if v[1].upper() in [l.value for l in IcaoWidth] else None
@@ -214,12 +217,151 @@ class StartupLocation:
                 oper_type = v[2]
             if len(v) > 3:
                 airline = v[3]
-        td = StartupLocation(id=tokens[6], lat=tokens[1], lon=tokens[2], heading=tokens[3], type_str=tokens[4], acfs=tokens[5].split("|"), name=tokens[6], icao_code=icao_code, oper_type=oper_type, airline=airline)
+        td = StartupLocation(lat=tokens[1], lon=tokens[2], heading=tokens[3], type_str=tokens[4], aircraft_types=tokens[5].split("|"), name=tokens[6], icao_code=icao_code, oper_type=oper_type, airline=airline)
         return td
 
 
 @dataclass
+class Runway:
+    """
+    RowCode.*_RUNWAY
+    """
+    name: str  # Name of runway
+    lon: float  # Runway end's longitude
+    lat: float  # Runway end's latitude
+    width: float  # Runway width in meter
+
+
+@dataclass
+class RunwayLand(Runway):
+    """
+    RowCode.LAND_RUNWAY
+    ```
+    #   0     1 2 3    4 5 6 7    8            9               10 11  1213141516   17           18              19 20  21222324
+    100 60.00 1 1 0.25 1 3 0 16L  25.29609337  051.60889908    0  300 2 2 1 0 34R  25.25546269  051.62677745    0  306 3 2 1 0
+    ```
+    """
+    surface_type: int
+    shoulder_type: int
+    smoothness: float
+
+    center_lights: int
+    edge_lights: int
+    distance_remaining: int
+
+    end_lon: float  # Runway end's longitude
+    end_lat: float  # Runway end's latitude
+
+    threshold: float  # Length of displaced threshold in metres (this is included in implied runway length)A displaced threshold will always be inside (between) the two runway ends
+    overrun: float  # Length of overrun/blast-pad in metres (not included in implied runway length)
+    marking: int  # Code for runway markings (Visual, non-precision, precision)
+    approach_lighting: int  # Code for approach lighting for this runway end
+    touch_down: int  # Flag for runway touchdown zone (TDZ) lighting
+    runway_end: int  # Code for Runway End Identifier Lights (REIL)
+
+    @staticmethod
+    def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> List['RunwayLand']:
+        r1 = RunwayLand(name=tokens[8],
+                    width=tokens[1],
+                    lon=tokens[10],
+                    lat=tokens[9],
+                    surface_type=tokens[2],
+                    shoulder_type=tokens[3],
+                    smoothness=tokens[4],
+                    center_lights=tokens[5],
+                    edge_lights=tokens[6],
+                    distance_remaining=tokens[7],
+                    end_lon=tokens[19],
+                    end_lat=tokens[18],
+                    threshold=tokens[11],
+                    overrun=tokens[12],
+                    marking=tokens[13],
+                    approach_lighting=tokens[14],
+                    touch_down=tokens[15],
+                    runway_end=tokens[16],
+                )
+        if len(tokens) <20:  # only one runway direction
+            return [ r1 ]
+        r2 = RunwayLand(name=tokens[17],
+                    width=tokens[1],
+                    lon=tokens[19],
+                    lat=tokens[18],
+                    surface_type=tokens[2],
+                    shoulder_type=tokens[3],
+                    smoothness=tokens[4],
+                    center_lights=tokens[5],
+                    edge_lights=tokens[6],
+                    distance_remaining=tokens[7],
+                    end_lon=tokens[10],
+                    end_lat=tokens[9],
+                    threshold=tokens[20],
+                    overrun=tokens[21],
+                    marking=tokens[22],
+                    approach_lighting=tokens[23],
+                    touch_down=tokens[24],
+                    runway_end=tokens[25],
+                )
+        return [r1, r2]
+
+
+@dataclass
+class RunwayWater(Runway):
+    """
+    RowCode.LAND_RUNWAY
+    """
+    buoys: int  # Flag for perimeter buoys, 0=no buoys, 1=render buoys
+
+    @staticmethod
+    def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> 'RunwayWater':
+        return RunwayWater(name=tokens[3],
+            width=tokens[1],
+            buoys=tokens[2],
+            lon=tokens[5],
+            lat=tokens[4],
+        )
+
+
+@dataclass
+class Helipad(Runway):
+    """
+    RowCode.LAND_RUNWAY
+    """
+    orientation: float
+    length: float
+    width: float
+    surface_code: int
+    marking: int
+    smoothness: float
+    edge_lighting: int
+
+    @staticmethod
+    def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> 'Helipad':
+        return Helipad(name=tokens[1],
+            lon=tokens[3],
+            lat=tokens[2],
+            orientation=tokens[4],
+            length=tokens[5],
+            width=tokens[6],
+            surface_code=tokens[7],
+            marking=tokens[8],
+            smoothness=tokens[9],
+            edge_lighting=tokens[10],
+        )
+
+
+@dataclass
 class DetailedAirport(Airport):
+    """Complement Airport class to provide additional details.
+
+    Complement Airport class to provide attributes such as:
+    - Road network
+    - Truck Parkings
+    - Truck Destinations
+    - Startup Locations
+    - Runways
+    with meta data
+
+    """
 
     @staticmethod
     def from_lines(dat_lines: List[str], from_file_name: Optional[Path] = None, xplane_version: int = 1100) -> 'Airport':
@@ -256,6 +398,18 @@ class DetailedAirport(Airport):
     def startup_locations(self) -> List[StartupLocation]:
         a = Accessories.from_tokenized_lines(tokenized_lines=self.tokenized_lines, main=RowCode.START_LOCATION_NEW, accessories=[RowCode.START_LOCATION_EXT])
         return [StartupLocation.from_tokenized_line(tokens=t, accessories=a) for t in self.tokenized_lines if t[0] == RowCode.START_LOCATION_NEW]
+
+    @apt_cached_property
+    def land_runways(self) -> List[RunwayLand]:
+        return reduce(add, [RunwayLand.from_tokenized_line(tokens=t) for t in self.tokenized_lines if t[0] == RowCode.LAND_RUNWAY])
+
+    @apt_cached_property
+    def water_runways(self) -> List[RunwayWater]:
+        return [RunwayWater.from_tokenized_line(tokens=t) for t in self.tokenized_lines if t[0] == RowCode.WATER_RUNWAY]
+
+    @apt_cached_property
+    def helipads(self) -> List[Helipad]:
+        return [Helipad.from_tokenized_line(tokens=t) for t in self.tokenized_lines if t[0] == RowCode.HELIPAD]
 
     def inject_active_zones(self):
         a = Accessories.from_tokenized_lines(tokenized_lines=self.tokenized_lines, main=RowCode.TAXI_ROUTE_EDGE, accessories=[RowCode.TAXI_ROUTE_HOLD])
