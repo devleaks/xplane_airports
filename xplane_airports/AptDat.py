@@ -16,74 +16,74 @@ WED_LINE_ENDING = '\n'
 
 
 class RowCode(IntEnum):
-    AIRPORT_HEADER		= 1
-    _RUNWAY_OLD			= 10  # Legacy runway/taxiway record from X-Plane 8.10 and earlier
-    TOWER_LOCATION		= 14
-    STARTUP_LOCATION	= 15
-    SEAPORT_HEADER		= 16
-    HELIPORT_HEADER		= 17
-    BEACON 				= 18
-    WINDSOCK 			= 19
-    FREQUENCY_AWOS 		= 50
-    FREQUENCY_CTAF 		= 51
-    FREQUENCY_DELIVERY 	= 52
-    FREQUENCY_GROUND 	= 53
-    FREQUENCY_TOWER 	= 54
-    FREQUENCY_APPROACH 	= 55
-    FREQUENCY_CENTER 	= 56
-    FREQUENCY_UNICOM 	= 57
-    FILE_END			= 99
+    AIRPORT_HEADER      = 1
+    _RUNWAY_OLD         = 10  # Legacy runway/taxiway record from X-Plane 8.10 and earlier
+    TOWER_LOCATION      = 14
+    STARTUP_LOCATION    = 15
+    SEAPORT_HEADER      = 16
+    HELIPORT_HEADER     = 17
+    BEACON              = 18
+    WINDSOCK            = 19
+    FREQUENCY_AWOS      = 50
+    FREQUENCY_CTAF      = 51
+    FREQUENCY_DELIVERY  = 52
+    FREQUENCY_GROUND    = 53
+    FREQUENCY_TOWER     = 54
+    FREQUENCY_APPROACH  = 55
+    FREQUENCY_CENTER    = 56
+    FREQUENCY_UNICOM    = 57
+    FILE_END            = 99
     # These records were new with X-Plane 8.50
-    TAXI_SIGN 			= 20
-    PAPI_LIGHTS			= 21
+    TAXI_SIGN           = 20
+    PAPI_LIGHTS         = 21
 
-    LAND_RUNWAY		= 100  # These replace the old type 10 record.
-    WATER_RUNWAY	= 101
-    HELIPAD 		= 102
-    TAXIWAY 		= 110
-    FREE_CHAIN		= 120
-    BOUNDARY 		= 130
+    LAND_RUNWAY     = 100  # These replace the old type 10 record.
+    WATER_RUNWAY    = 101
+    HELIPAD         = 102
+    TAXIWAY         = 110
+    FREE_CHAIN      = 120
+    BOUNDARY        = 130
 
-    LINE_SEGMENT	= 111
-    LINE_CURVE		= 112
-    RING_SEGMENT	= 113
-    RING_CURVE 		= 114
-    END_SEGMENT	 	= 115
-    END_CURVE 		= 116
+    LINE_SEGMENT    = 111
+    LINE_CURVE      = 112
+    RING_SEGMENT    = 113
+    RING_CURVE      = 114
+    END_SEGMENT     = 115
+    END_CURVE       = 116
 
     # These records were new with X-Plane 10
-    FLOW_DEFINITION	= 1000  # 1000 <traffic flow name, must be unique to the ICAO airport>
-    FLOW_WIND		= 1001  # 1001 <metar icao> <wind dir min> <wind dir max> <wind max speed>
-    FLOW_CEILING	= 1002  # 1002 <metar icao> <ceiling minimum>
-    FLOW_VISIBILITY	= 1003  # 1003 <metar icao> <vis minimum>
-    FLOW_TIME		= 1004  # 1004 <zulu time start> <zulu time end>
+    FLOW_DEFINITION = 1000  # 1000 <traffic flow name, must be unique to the ICAO airport>
+    FLOW_WIND       = 1001  # 1001 <metar icao> <wind dir min> <wind dir max> <wind max speed>
+    FLOW_CEILING    = 1002  # 1002 <metar icao> <ceiling minimum>
+    FLOW_VISIBILITY = 1003  # 1003 <metar icao> <vis minimum>
+    FLOW_TIME       = 1004  # 1004 <zulu time start> <zulu time end>
 
-    CHANNEL_AWOS 		= 1050  # 8.33kHz 6-digit COM channels replacing the 50..57 records
-    CHANNEL_CTAF 		= 1051
-    CHANNEL_DELIVERY	= 1052
-    CHANNEL_GROUND 		= 1053
-    CHANNEL_TOWER 		= 1054
-    CHANNEL_APPROACH	= 1055
-    CHANNEL_CENTER 		= 1056
-    CHANNEL_UNICOM 		= 1057
+    CHANNEL_AWOS        = 1050  # 8.33kHz 6-digit COM channels replacing the 50..57 records
+    CHANNEL_CTAF        = 1051
+    CHANNEL_DELIVERY    = 1052
+    CHANNEL_GROUND      = 1053
+    CHANNEL_TOWER       = 1054
+    CHANNEL_APPROACH    = 1055
+    CHANNEL_CENTER      = 1056
+    CHANNEL_UNICOM      = 1057
 
-    FLOW_RUNWAY_RULE		= 1100
-    FLOW_PATTERN			= 1101
+    FLOW_RUNWAY_RULE        = 1100
+    FLOW_PATTERN            = 1101
     FLOW_RUNWAY_RULE_CHANNEL= 1110
 
-    TAXI_ROUTE_HEADER	= 1200
-    TAXI_ROUTE_NODE		= 1201
-    TAXI_ROUTE_EDGE		= 1202
-    TAXI_ROUTE_SHAPE	= 1203
-    TAXI_ROUTE_HOLD		= 1204
-    TAXI_ROUTE_ROAD		= 1206
+    TAXI_ROUTE_HEADER   = 1200
+    TAXI_ROUTE_NODE     = 1201
+    TAXI_ROUTE_EDGE     = 1202
+    TAXI_ROUTE_SHAPE    = 1203
+    TAXI_ROUTE_HOLD     = 1204
+    TAXI_ROUTE_ROAD     = 1206
 
-    START_LOCATION_NEW	= 1300 # Replaces 15 record
-    START_LOCATION_EXT	= 1301
-    METADATA			= 1302
+    START_LOCATION_NEW  = 1300 # Replaces 15 record
+    START_LOCATION_EXT  = 1301
+    METADATA            = 1302
 
     TRUCK_PARKING         = 1400
-    TRUCK_DESTINATION	  = 1401
+    TRUCK_DESTINATION     = 1401
     CUSTOM_TRUCK_OBJECTS  = 1402
 
     ACTIVE_JETWAY         = 1500
@@ -217,7 +217,6 @@ class TaxiRouteNode:
     id: int     # The node identifier (must be unique within an airport)
     lon: float  # Node's longitude
     lat: float  # Node's latitude
-    usage: str = ""
 
 
 class IcaoWidth(Enum):
@@ -239,83 +238,6 @@ class IcaoWidth(Enum):
         raise LookupError(f'No instance of {cls} matches "{string}"')
 
 
-
-class Accessories:
-    """Find all lines with line code in accessories related to a close, previous line with code main.
-
-    Example:
-    ...
-    1202 1007 609 twoway taxiway_E B6
-    1202 1022 1023 twoway taxiway_F B 9
-    1204 departure 07L,25R
-    1204 arrival 07L,25R
-    1204 ils 07L,25R
-    1202 627 1022 twoway taxiway_F B 9
-    1204 departure 07L,25R
-    1204 arrival 07L,25R
-    1204 ils 07L,25R
-    1202 610 847 twoway taxiway_E E5
-    ...
-    will build with main = 1202 (edges) and accessories = [ 1204 (active edges) ]:
-
-    1007  609: nothing
-
-    1022 1023:
-        1204 departure 07L,25R  # lines that relate to above 1202 1022 1023 twoway taxiway_F B 9
-        1204 arrival 07L,25R
-        1204 ils 07L,25R
-
-     627 1022:
-        1204 departure 07L,25R  # lines that relate to above 1202 627 1022 twoway taxiway_F B 9
-        1204 arrival 07L,25R
-        1204 ils 07L,25R
-
-     610  847: Nothing
-    """
-
-    @staticmethod
-    def from_tokenized_lines(tokenized_lines: List[List[Union[RowCode, str]]], main: RowCode, accessories: List[RowCode]) -> Dict[List[Union[RowCode, str]], List[List[Union[RowCode, str]]]]:
-        lines_with_accessories = {}
-        main_line = None
-        i = 0
-        while i < len(tokenized_lines):
-            tokens = tokenized_lines[i]
-            if tokens[0] != main:
-                i += 1
-                continue
-            main_line = tokens
-            i += 1
-            if i < len(tokenized_lines):
-                tokens = tokenized_lines[i]
-                accessory_lines = []
-                while i < len(tokenized_lines) and main_line is not None:
-                    tokens = tokenized_lines[i]
-                    if tokens[0] in accessories:
-                        accessory_lines.append(tokens)
-                    elif tokens[0] == main:  # finished, start new one
-                        if len(accessory_lines) > 0:
-                            lines_with_accessories["-".join([str(k) for k in main_line[1:3]])] = accessory_lines
-                        main_line = None
-                    i += 1
-        return lines_with_accessories
-
-
-@dataclass
-class ActiveEdge:
-    """
-    Identifies an edge as in a runway active zone.
-    """
-    zone: str  # departure, arrival, ils
-    runways: str  # up to 4 runways
-
-    @staticmethod
-    def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> 'ActiveEdge':
-        return ActiveEdge(zone=tokens[1], runways=tokens[2])
-
-    def runway_list(self) -> List[str]:
-        return self.runways.split(",")
-
-
 @dataclass
 class TaxiRouteEdge:
     """
@@ -329,7 +251,6 @@ class TaxiRouteEdge:
     is_runway: bool = False  # If false, it's a taxiway
     one_way: bool = False  # If false, it supports two-way traffic
     icao_width: Optional[IcaoWidth] = None  # The width class of the taxiway; unknown if None
-    active_zones: Union[List[ActiveEdge], None] = None
 
     @staticmethod
     def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> 'TaxiRouteEdge':
@@ -357,7 +278,7 @@ class TaxiRouteNetwork:
     def from_tokenized_lines(tokenized_lines: Collection[List[Union[RowCode, str]]]) -> 'TaxiRouteNetwork':
         nodes = {
             node.id: node
-            for node in map(lambda tokens: TaxiRouteNode(id=int(tokens[4]), lon=float(tokens[2]), lat=float(tokens[1]), usage=tokens[3]),
+            for node in map(lambda tokens: TaxiRouteNode(id=int(tokens[4]), lon=float(tokens[2]), lat=float(tokens[1])),
                             filter(lambda line: line[0] == RowCode.TAXI_ROUTE_NODE, tokenized_lines))
         }
         edges = [TaxiRouteEdge.from_tokenized_line(tokens)
@@ -367,64 +288,11 @@ class TaxiRouteNetwork:
 
 
 @dataclass
-class RoadNode:
-    """
-    A node in a road network.
-    Every node must be part of one or more edges.
-    """
-    id: int     # The node identifier (must be unique within an airport)
-    lon: float  # Node's longitude
-    lat: float  # Node's latitude
-
-
-@dataclass
-class RoadEdge:
-    """
-    An edge in a road network.
-    Every edge is defined by its two node endpoints.
-    Edges may support one- or two-way traffic.
-    """
-    node_begin: int  # The identifier of the beginning node
-    node_end: int    # The identifier of the terminal node
-    name: str        # The road identifier, may be the empty string
-    one_way: bool = False  # If false, it supports two-way traffic
-
-    @staticmethod
-    def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> 'RoadEdge':
-        name = " ".join(tokens[4:]) if len(tokens) > 4 else ""
-        edge = RoadEdge(name=name, node_begin=int(tokens[1]), node_end=int(tokens[2]), one_way=tokens[3] == 'oneway')
-        return edge
-
-
-@dataclass
-class RoadNetwork:
-    nodes: Dict[int, RoadNode] = field(default_factory=dict)
-    edges: List[RoadEdge] = field(default_factory=list)
-
-    @staticmethod
-    def from_lines(apt_dat_lines: Collection[AptDatLine]) -> 'RoadNetwork':
-        return RoadNetwork.from_tokenized_lines([line.tokens for line in apt_dat_lines if not line.is_ignorable()])
-
-    @staticmethod
-    def from_tokenized_lines(tokenized_lines: Collection[List[Union[RowCode, str]]]) -> 'RoadNetwork':
-        nodes = {
-            node.id: node
-            for node in map(lambda tokens: RoadNode(id=int(tokens[4]), lon=float(tokens[2]), lat=float(tokens[1])),
-                            filter(lambda line: line[0] == RowCode.TAXI_ROUTE_NODE, tokenized_lines))
-        }
-        edges = [RoadEdge.from_tokenized_line(tokens)
-                 for tokens in tokenized_lines
-                 if tokens[0] == RowCode.TAXI_ROUTE_ROAD]
-        return RoadNetwork(nodes=nodes, edges=edges)
-
-
-
-@dataclass
 class Airport:
     """A single airport from an apt.dat file."""
     from_file: Optional[Path] = None  # Path to the apt.dat file from which this airport was read
     raw_lines: List[str] = field(default_factory=list)  # The complete text of the portion of the apt.dat file pertaining to this airport, with leading & trailing whitespace removed
-    xplane_version: int = 1200    # The version of X-Plane apt.dat spec (1050, 1100, 1130, etc.) used by the airport
+    xplane_version: int = 1100    # The version of X-Plane apt.dat spec (1050, 1100, 1130, etc.) used by the airport
     # An intermediate tokenization, used for speed of parsing.
     # The first element is the RowCode of the line, remaining elements (if any) are strings.
     tokenized_lines: List[List[Union[RowCode, str]]] = field(default_factory=list)
@@ -589,12 +457,8 @@ class Airport:
     def taxi_network(self) -> TaxiRouteNetwork:
         return TaxiRouteNetwork.from_tokenized_lines(self.tokenized_lines)
 
-    @apt_cached_property
-    def road_network(self) -> RoadNetwork:
-        return RoadNetwork.from_tokenized_lines(self.tokenized_lines)
-
     @staticmethod
-    def from_lines(dat_lines: List[str], from_file_name: Optional[Path] = None, xplane_version: int = 1200) -> 'Airport':
+    def from_lines(dat_lines: List[str], from_file_name: Optional[Path] = None, xplane_version: int = 1100) -> 'Airport':
         """
         :param dat_lines: The lines of the apt.dat file
         :param from_file_name: The name of the apt.dat file you read this airport in from
@@ -604,7 +468,7 @@ class Airport:
         return Airport(from_file_name, dat_lines, xplane_version, tokenized)
 
     @staticmethod
-    def from_str(file_text: str, from_file_name: Optional[PathLike] = None, xplane_version: int = 1200) -> 'Airport':
+    def from_str(file_text: str, from_file_name: Optional[PathLike] = None, xplane_version: int = 1100) -> 'Airport':
         """
         :param file_text: The portion of the apt.dat file text that specifies this airport
         :param from_file_name: The name of the apt.dat file you read this airport in from
@@ -612,19 +476,13 @@ class Airport:
         cleaned_lines = list(filter(lambda l: not AptDatLine.raw_is_ignorable(l), file_text.splitlines()))
         return Airport.from_lines(cleaned_lines, from_file_name, xplane_version)
 
-    def inject_active_zones(self):
-        a = Accessories.from_tokenized_lines(tokenized_lines=self.tokenized_lines, main=RowCode.TAXI_ROUTE_EDGE, accessories=[RowCode.TAXI_ROUTE_HOLD])
-        for e in self.taxi_network.edges:
-            k = f"{e.node_begin}-{e.node_end}"
-            e.active_zones = [ActiveEdge(zone=t[1], runways=t[2]) for t in a[k]] if k in a else None
-
 
 class AptDat:
     """
     A container class for ``Airport`` objects.
     Parses X-Plane's gigantic apt.dat files, which may have data on hundreds of airports.
     """
-    def __init__(self, path_to_file: Optional[PathLike] = None, xplane_version: int = 1200):
+    def __init__(self, path_to_file: Optional[PathLike] = None, xplane_version: int = 1100):
         """
         :param path_to_file Location of the apt.dat (or ICAO.dat) file to read from disk
         :param xplane_version The version of the apt.dat spec used by this file---overridden by any file we read (assuming it has a proper header).
