@@ -206,6 +206,12 @@ class AptDatLine:
         return tokens
 
 
+class TaxiNodeUsage(Enum):
+    INITIAL = 'init'
+    DESTINATION = 'dest'
+    BOTH = 'both'
+    JUNCTION = 'junc'
+
 @dataclass
 class TaxiRouteNode:
     """
@@ -217,6 +223,7 @@ class TaxiRouteNode:
     id: int     # The node identifier (must be unique within an airport)
     lon: float  # Node's longitude
     lat: float  # Node's latitude
+    usage: TaxiNodeUsage = TaxiNodeUsage.BOTH  # backward compatibility
 
 
 class IcaoWidth(Enum):
@@ -278,7 +285,7 @@ class TaxiRouteNetwork:
     def from_tokenized_lines(tokenized_lines: Collection[List[Union[RowCode, str]]]) -> 'TaxiRouteNetwork':
         nodes = {
             node.id: node
-            for node in map(lambda tokens: TaxiRouteNode(id=int(tokens[4]), lon=float(tokens[2]), lat=float(tokens[1])),
+            for node in map(lambda tokens: TaxiRouteNode(id=int(tokens[4]), lon=float(tokens[2]), lat=float(tokens[1]), usage=TaxiNodeUsage(tokens[3])),
                             filter(lambda line: line[0] == RowCode.TAXI_ROUTE_NODE, tokenized_lines))
         }
         edges = [TaxiRouteEdge.from_tokenized_line(tokens)
@@ -482,7 +489,7 @@ class AptDat:
     A container class for ``Airport`` objects.
     Parses X-Plane's gigantic apt.dat files, which may have data on hundreds of airports.
     """
-    def __init__(self, path_to_file: Optional[PathLike] = None, xplane_version: int = 1100):
+    def __init__(self, path_to_file: Optional[PathLike] = None, xplane_version: int = 1200):
         """
         :param path_to_file Location of the apt.dat (or ICAO.dat) file to read from disk
         :param xplane_version The version of the apt.dat spec used by this file---overridden by any file we read (assuming it has a proper header).
