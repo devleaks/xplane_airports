@@ -165,7 +165,7 @@ class TruckParking:
     @staticmethod
     def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> 'TruckParking':
         name = " ".join(tokens[6:]) if len(tokens) > 6 else ""
-        return TruckParking(lat=tokens[1], lon=tokens[2], heading=tokens[3], type_str=tokens[4], type_len=tokens[5], name=name)
+        return TruckParking(lat=float(tokens[1]), lon=float(tokens[2]), heading=float(tokens[3]), type_str=tokens[4], type_len=int(tokens[5]), name=name)
 
 
 @dataclass
@@ -182,7 +182,7 @@ class TruckDestination:
     @staticmethod
     def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> 'TruckDestination':
         name = " ".join(tokens[5:]) if len(tokens) > 5 else ""
-        return TruckDestination(lat=tokens[1], lon=tokens[2], heading=tokens[3], types_str=tokens[4].split("|"), name=name)
+        return TruckDestination(lat=float(tokens[1]), lon=float(tokens[2]), heading=float(tokens[3]), types_str=tokens[4].split("|"), name=name)
 
 
 @dataclass
@@ -213,7 +213,7 @@ class StartupLocation:
                 oper_type = v[2]
             if len(v) > 3:
                 airline = v[3]
-        td = StartupLocation(lat=tokens[1], lon=tokens[2], heading=tokens[3], type_str=tokens[4], aircraft_types=tokens[5].split("|"), name=tokens[6], icao_code=icao_code, oper_type=oper_type, airline=airline)
+        td = StartupLocation(lat=float(tokens[1]), lon=float(tokens[2]), heading=float(tokens[3]), type_str=tokens[4], aircraft_types=tokens[5].split("|"), name=tokens[6], icao_code=icao_code, oper_type=oper_type, airline=airline)
         return td
 
 
@@ -258,44 +258,44 @@ class RunwayLand(Runway):
     @staticmethod
     def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> List['RunwayLand']:
         r1 = RunwayLand(name=tokens[8],
-                    width=tokens[1],
-                    lon=tokens[10],
-                    lat=tokens[9],
-                    surface_type=tokens[2],
-                    shoulder_type=tokens[3],
-                    smoothness=tokens[4],
-                    center_lights=tokens[5],
-                    edge_lights=tokens[6],
-                    distance_remaining=tokens[7],
-                    end_lon=tokens[19],
-                    end_lat=tokens[18],
-                    threshold=tokens[11],
-                    overrun=tokens[12],
-                    marking=tokens[13],
-                    approach_lighting=tokens[14],
-                    touch_down=tokens[15],
-                    runway_end=tokens[16],
+                    width=float(tokens[1]),
+                    lon=float(tokens[10]),
+                    lat=float(tokens[9]),
+                    surface_type=int(tokens[2]),
+                    shoulder_type=int(tokens[3]),
+                    smoothness=int(tokens[4]),
+                    center_lights=int(tokens[5]),
+                    edge_lights=int(tokens[6]),
+                    distance_remaining=int(tokens[7]),
+                    end_lon=float(tokens[19]),
+                    end_lat=float(tokens[18]),
+                    threshold=float(tokens[11]),
+                    overrun=float(tokens[12]),
+                    marking=int(tokens[13]),
+                    approach_lighting=int(tokens[14]),
+                    touch_down=int(tokens[15]),
+                    runway_end=int(tokens[16]),
                 )
         if len(tokens) <20:  # only one runway direction
             return [ r1 ]
         r2 = RunwayLand(name=tokens[17],
-                    width=tokens[1],
-                    lon=tokens[19],
-                    lat=tokens[18],
-                    surface_type=tokens[2],
-                    shoulder_type=tokens[3],
-                    smoothness=tokens[4],
-                    center_lights=tokens[5],
-                    edge_lights=tokens[6],
-                    distance_remaining=tokens[7],
-                    end_lon=tokens[10],
-                    end_lat=tokens[9],
-                    threshold=tokens[20],
-                    overrun=tokens[21],
-                    marking=tokens[22],
-                    approach_lighting=tokens[23],
-                    touch_down=tokens[24],
-                    runway_end=tokens[25],
+                    width=float(tokens[1]),
+                    lon=float(tokens[19]),
+                    lat=float(tokens[18]),
+                    surface_type=int(tokens[2]),
+                    shoulder_type=int(tokens[3]),
+                    smoothness=int(tokens[4]),
+                    center_lights=int(tokens[5]),
+                    edge_lights=int(tokens[6]),
+                    distance_remaining=int(tokens[7]),
+                    end_lon=float(tokens[10]),
+                    end_lat=float(tokens[9]),
+                    threshold=float(tokens[20]),
+                    overrun=float(tokens[21]),
+                    marking=int(tokens[22]),
+                    approach_lighting=int(tokens[23]),
+                    touch_down=int(tokens[24]),
+                    runway_end=int(tokens[25]),
                 )
         return [r1, r2]
 
@@ -310,10 +310,10 @@ class RunwayWater(Runway):
     @staticmethod
     def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> 'RunwayWater':
         return RunwayWater(name=tokens[3],
-            width=tokens[1],
-            buoys=tokens[2],
-            lon=tokens[5],
-            lat=tokens[4],
+            width=float(tokens[1]),
+            buoys=int(tokens[2]),
+            lon=float(tokens[5]),
+            lat=float(tokens[4]),
         )
 
 
@@ -333,15 +333,15 @@ class Helipad(Runway):
     @staticmethod
     def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> 'Helipad':
         return Helipad(name=tokens[1],
-            lon=tokens[3],
-            lat=tokens[2],
-            orientation=tokens[4],
-            length=tokens[5],
-            width=tokens[6],
-            surface_code=tokens[7],
-            marking=tokens[8],
-            smoothness=tokens[9],
-            edge_lighting=tokens[10],
+            lon=float(tokens[3]),
+            lat=float(tokens[2]),
+            orientation=float(tokens[4]),
+            length=float(tokens[5]),
+            width=float(tokens[6]),
+            surface_code=int(tokens[7]),
+            marking=int(tokens[8]),
+            smoothness=float(tokens[9]),
+            edge_lighting=int(tokens[10]),
         )
 
 
