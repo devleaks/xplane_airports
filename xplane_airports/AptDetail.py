@@ -1,18 +1,14 @@
 """
 Tools for reading, inspecting, and manipulating X-Plane’s airport (apt.dat) files.
 """
-import itertools
-from contextlib import suppress
 from dataclasses import dataclass, field
 from functools import reduce
-from operator import attrgetter, add
+from operator import add
 from os import PathLike
-import re
-from enum import IntEnum, Enum
 from pathlib import Path
-from typing import Callable, Collection, Dict, Iterable, List, Optional, Union, FrozenSet
+from typing import Collection, Dict, List, Optional, Union
 from xplane_airports._cached_prop import apt_cached_property
-from xplane_airports.AptDat import IcaoWidth, RowCode, RunwayType, runway_codes, AptDatLine, Airport
+from xplane_airports.AptDat import IcaoWidth, RowCode, AptDatLine, Airport
 
 # ##################################
 #
@@ -349,6 +345,10 @@ class Helipad(Runway):
         )
 
 
+# ##################################
+#
+# Detailed Airport Entity
+#
 @dataclass
 class DetailedAirport(Airport):
     """Complement Airport class to provide additional details.
@@ -358,13 +358,23 @@ class DetailedAirport(Airport):
     - Truck Parkings
     - Truck Destinations
     - Startup Locations
-    - Runways
-    with meta data
+    - Runways (land, water, helipads)
+    together with meta data.
 
+    This allows for better airport management where geometries, etc. are needed.
+    For example to build routes to destination for cars, aircrafts, etc.
     """
+    @staticmethod
+    def from_airport(airport: Airport) -> 'DetailedAirport':
+        """
+        :param dat_lines: The lines of the apt.dat file
+        :param from_file_name: The name of the apt.dat file you read this airport in from
+        :param xplane_version: The version of the apt.dat spec this airport uses (1050, 1100, 1130, etc.)
+        """
+        return DetailedAirport.from_str(file_text="\n".join(airport.raw_lines))
 
     @staticmethod
-    def from_lines(dat_lines: List[str], from_file_name: Optional[Path] = None, xplane_version: int = 1100) -> 'Airport':
+    def from_lines(dat_lines: List[str], from_file_name: Optional[Path] = None, xplane_version: int = 1100) -> 'DetailedAirport':
         """
         :param dat_lines: The lines of the apt.dat file
         :param from_file_name: The name of the apt.dat file you read this airport in from
@@ -374,7 +384,7 @@ class DetailedAirport(Airport):
         return DetailedAirport(from_file_name, dat_lines, xplane_version, tokenized)
 
     @staticmethod
-    def from_str(file_text: str, from_file_name: Optional[PathLike] = None, xplane_version: int = 1100) -> 'Airport':
+    def from_str(file_text: str, from_file_name: Optional[PathLike] = None, xplane_version: int = 1100) -> 'DetailedAirport':
         """
         :param file_text: The portion of the apt.dat file text that specifies this airport
         :param from_file_name: The name of the apt.dat file you read this airport in from
@@ -416,3 +426,5 @@ class DetailedAirport(Airport):
         for e in self.taxi_network.edges:
             k = f"{e.node_begin}-{e.node_end}"
             e.active_zones = [ActiveEdge(zone=t[1], runways=t[2]) for t in a[k]] if k in a else None
+
+#
