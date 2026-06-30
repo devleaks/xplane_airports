@@ -557,6 +557,10 @@ class DetailedAirport(Airport):
     def water_runways(self) -> List[RunwayWater]:
         return [RunwayWater.from_tokenized_line(tokens=t) for t in self.tokenized_lines if t[0] == RowCode.WATER_RUNWAY]
 
+    @property
+    def runways(self) -> List[Runway]:
+        return self.land_runways + self.water_runways
+
     @apt_cached_property
     def helipads(self) -> List[Helipad]:
         return [Helipad.from_tokenized_line(tokens=t) for t in self.tokenized_lines if t[0] == RowCode.HELIPAD]
@@ -564,9 +568,10 @@ class DetailedAirport(Airport):
     @apt_cached_property
     def airport_flows(self) -> List[AirportFlow]:
         a = Accessories.from_tokenized_lines(tokenized_lines=self.tokenized_lines, main=RowCode.FLOW_DEFINITION, accessories=AIRPORT_FLOWS.keys(), key=[1, 10], sep=" ")
-        flows = []
-        for k, acc in a.items():
-            flows += [AIRPORT_FLOWS.get(v[0]).from_tokenized_line(name=k, tokens=v) for v in acc]
-        return flows
+        return reduce(add, [[AIRPORT_FLOWS.get(v[0]).from_tokenized_line(name=k, tokens=v) for v in acc] for k, acc in a.items()])
+        # flows = []
+        # for k, acc in a.items():
+        #     flows += [AIRPORT_FLOWS.get(v[0]).from_tokenized_line(name=k, tokens=v) for v in acc]
+        # return flows
 
 #

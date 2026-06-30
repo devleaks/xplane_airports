@@ -5,7 +5,7 @@ with open('README.md') as f:
 
 setup(
     name='xplane_airports',
-    version='5.1.0',
+    version='5.1.1',
     packages=find_packages(),
     url='https://github.com/X-Plane/xplane_airports',
     license='MIT',
@@ -25,7 +25,7 @@ setup(
     ],
     install_requires=[
         'requests',
-        'dataclasses>=0.6; python_version < "3.7"'
+        'dataclasses>=0.6; python_version < "3.12"'
     ],
     test_suite='xplane_airports/test_AptDat.py'
 )
