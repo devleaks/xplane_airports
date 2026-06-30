@@ -48,12 +48,14 @@ class Accessories:
     """
     @staticmethod
     def key(tokens: List[Union[RowCode, str]], key: List[int] = [1, 3], sep: str = "-") -> str:
-        return sep.join([str(k) for k in tokens[key[0]:key[1]]])
+        return sep.join([str(k) for k in tokens[min(key[0], len(tokens)):min(key[1], len(tokens))]])
 
     @staticmethod
-    def from_tokenized_lines(tokenized_lines: List[List[Union[RowCode, str]]], main: RowCode, accessories: List[RowCode], key: List[int] = [1, 3]) -> Dict[List[Union[RowCode, str]], List[List[Union[RowCode, str]]]]:
+    def from_tokenized_lines(tokenized_lines: List[List[Union[RowCode, str]]], main: RowCode, accessories: List[RowCode], key: List[int] = [1, 3], sep: str = "-") -> Dict[List[Union[RowCode, str]], List[List[Union[RowCode, str]]]]:
         lines_with_accessories = {}
         main_line = None
+        accessory_lines = []
+
         i = 0
         while i < len(tokenized_lines):
             tokens = tokenized_lines[i]
@@ -70,17 +72,27 @@ class Accessories:
                     if tokens[0] in accessories:
                         accessory_lines.append(tokens)
                     elif tokens[0] == main:  # finished, start new one
+                        k = Accessories.key(tokens=main_line, key=key, sep=sep)
                         if len(accessory_lines) > 0:
-                            k = Accessories.key(tokens=main_line, key=key)
                             lines_with_accessories[k] = accessory_lines
-                        main_line = None
+                            accessory_lines = []
+                            main_line = tokens
                     i += 1
+
+        if len(accessory_lines) > 0: # push last one if any
+            k = Accessories.key(tokens=main_line, key=key, sep=sep)
+            lines_with_accessories[k] = accessory_lines
+
         return lines_with_accessories
 
 
-# ##################################
+# ######################################################
 #
-# Entity Helper Classes
+# E N T I T Y   H E L P E R   C L A S S E S
+#
+# ######################################################
+#
+# Taxi and road networks
 #
 @dataclass
 class ActiveEdge:
@@ -217,6 +229,10 @@ class StartupLocation:
         return td
 
 
+# ######################################################
+#
+# Runways
+#
 @dataclass
 class Runway:
     """
@@ -345,9 +361,125 @@ class Helipad(Runway):
         )
 
 
-# ##################################
+# ######################################################
 #
-# Detailed Airport Entity
+# Airport traffic flow
+#
+@dataclass
+class AirportFlow:
+    """
+    RowCode.FLOW_*
+    """
+    name: str  # Airport flow name
+
+    @staticmethod
+    def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> 'AirportFlow':
+        return AirportFlow(name=" ".join(tokens[1:]))
+
+
+@dataclass
+class AFWind(AirportFlow):
+    """
+    RowCode.1001
+    """
+    station: str  # METAR reporting station (may be a remote airport)
+    wind_dir_min: float  # Wind direction minimum (magnetic) (int?)
+    wind_dir_max: float  # Wind direction maximum (magnetic)
+    wind_speed_max: float = 999  # Use 999 for ‘all’ wind speeds. (unit?)
+
+    @staticmethod
+    def from_tokenized_line(name: str, tokens: List[Union[RowCode, str]]) -> 'AFWind':
+        return AFWind(name=name, station=tokens[1], wind_dir_min=float(tokens[2]), wind_dir_max=float(tokens[3]), wind_speed_max=float(tokens[4]))
+
+
+@dataclass
+class AFCeiling(AirportFlow):
+    """
+    RowCode.1002
+    """
+    station: str  # METAR reporting station (may be a remote airport)
+    ceiling_ft: int  # Minimum reported ceiling in feet AGL at reporting station
+
+    @staticmethod
+    def from_tokenized_line(name: str, tokens: List[Union[RowCode, str]]) -> 'AFCeiling':
+        return AFCeiling(name=name, station=tokens[1], ceiling_ft=int(tokens[2]))
+
+
+@dataclass
+class AFVisibility(AirportFlow):
+    """
+    RowCode.1003
+    """
+    station: str  # METAR reporting station (may be a remote airport)
+    visibility_sm: float  # Minimum reported visibility in statute miles
+
+    @staticmethod
+    def from_tokenized_line(name: str, tokens: List[Union[RowCode, str]]) -> 'AFVisibility':
+        return AFVisibility(name=name, station=tokens[1], visibility_sm=float(tokens[2]))
+
+
+@dataclass
+class AFTime(AirportFlow):
+    """
+    RowCode.1004
+    """
+    utc_start: str  # UTC time from which rule is valid (0000 - 2400)
+    utc_end: str
+
+    @staticmethod
+    def from_tokenized_line(name: str, tokens: List[Union[RowCode, str]]) -> 'AFTime':
+        return AFTime(name=name, utc_start=tokens[1], utc_end=tokens[2])
+
+
+# ######################################################
+#
+# Runways In Use
+#
+@dataclass
+class RunwayInUse(AirportFlow):
+    """
+    RowCode.1100, 1110
+    """
+    rule_name: str  # Rule name
+    runway: str  # Runway end identifier
+    frequency: float  # Arrival or departure frequency
+    rule_type: list  # arrivals|departures
+    jets: list  # Airplane types to which rule applies
+    on_course: str  # On course heading range ((ie. first leg of flight plan  for departures, last leg for arrivals, 000000 – 359359)
+    initial: str  # Initial ATC assigned departure heading range.  Not used for arrivals. (000000 – 359359)
+
+    @staticmethod
+    def from_tokenized_line(name: str, tokens: List[Union[RowCode, str]]) -> 'RunwayInUse':
+        f = int(tokens[2]) / (1000 if len(tokens[2]) > 5 else 100)
+        return RunwayInUse(name=name, rule_name=" ".join(tokens[7:]), runway=tokens[1], frequency=f, rule_type=tokens[3], jets=tokens[4].split("|"), on_course=tokens[5], initial=tokens[6])
+
+
+@dataclass
+class VFRPattern(AirportFlow):
+    """
+    RowCode.1100, 1110
+    """
+    runway: str  # Runway end identifier
+    pattern: str  # VFR traffic pattern direction
+
+    @staticmethod
+    def from_tokenized_line(name: str, tokens: List[Union[RowCode, str]]) -> 'VFRPattern':
+        return VFRPattern(name=name, runway=tokens[1], pattern=tokens[2])
+
+
+AIRPORT_FLOWS = {
+    RowCode.FLOW_WIND: AFWind,
+    RowCode.FLOW_CEILING: AFCeiling,
+    RowCode.FLOW_TIME: AFTime,
+    RowCode.FLOW_VISIBILITY: AFVisibility,
+    RowCode.FLOW_RUNWAY_RULE: RunwayInUse,
+    RowCode.FLOW_RUNWAY_RULE_CHANNEL: RunwayInUse,
+    RowCode.FLOW_PATTERN: VFRPattern
+}
+
+# ######################################################
+#
+# D E T A I L E D   A I R P O R T   E N T I T Y
 #
 @dataclass
 class DetailedAirport(Airport):
@@ -371,7 +503,9 @@ class DetailedAirport(Airport):
         :param from_file_name: The name of the apt.dat file you read this airport in from
         :param xplane_version: The version of the apt.dat spec this airport uses (1050, 1100, 1130, etc.)
         """
-        return DetailedAirport.from_str(file_text="\n".join(airport.raw_lines))
+        d = DetailedAirport.from_str(file_text="\n".join(airport.raw_lines))
+        d._inject_active_zones()
+        return d
 
     @staticmethod
     def from_lines(dat_lines: List[str], from_file_name: Optional[Path] = None, xplane_version: int = 1100) -> 'DetailedAirport':
@@ -391,6 +525,12 @@ class DetailedAirport(Airport):
         """
         cleaned_lines = list(filter(lambda l: not AptDatLine.raw_is_ignorable(l), file_text.splitlines()))
         return DetailedAirport.from_lines(cleaned_lines, from_file_name, xplane_version)
+
+    def _inject_active_zones(self):
+        a = Accessories.from_tokenized_lines(tokenized_lines=self.tokenized_lines, main=RowCode.TAXI_ROUTE_EDGE, accessories=[RowCode.TAXI_ROUTE_HOLD])
+        for e in self.taxi_network.edges:
+            k = f"{e.node_begin}-{e.node_end}"
+            e.active_zones = [ActiveEdge(zone=t[1], runways=t[2]) for t in a[k]] if k in a else None
 
     @apt_cached_property
     def road_network(self) -> RoadNetwork:
@@ -421,10 +561,12 @@ class DetailedAirport(Airport):
     def helipads(self) -> List[Helipad]:
         return [Helipad.from_tokenized_line(tokens=t) for t in self.tokenized_lines if t[0] == RowCode.HELIPAD]
 
-    def inject_active_zones(self):
-        a = Accessories.from_tokenized_lines(tokenized_lines=self.tokenized_lines, main=RowCode.TAXI_ROUTE_EDGE, accessories=[RowCode.TAXI_ROUTE_HOLD])
-        for e in self.taxi_network.edges:
-            k = f"{e.node_begin}-{e.node_end}"
-            e.active_zones = [ActiveEdge(zone=t[1], runways=t[2]) for t in a[k]] if k in a else None
+    @apt_cached_property
+    def airport_flows(self) -> List[AirportFlow]:
+        a = Accessories.from_tokenized_lines(tokenized_lines=self.tokenized_lines, main=RowCode.FLOW_DEFINITION, accessories=AIRPORT_FLOWS.keys(), key=[1, 10], sep=" ")
+        flows = []
+        for k, acc in a.items():
+            flows += [AIRPORT_FLOWS.get(v[0]).from_tokenized_line(name=k, tokens=v) for v in acc]
+        return flows
 
 #
