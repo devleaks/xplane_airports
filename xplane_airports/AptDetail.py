@@ -48,12 +48,17 @@ class Accessories:
     """
     @staticmethod
     def key(tokens: List[Union[RowCode, str]], key: List[int] = [1, 3], sep: str = "-") -> str:
-        return sep.join([str(k) for k in tokens[min(key[0], len(tokens)):min(key[1], len(tokens))]])
+        """Builds a key from line tokens
+
+        Concatenates tokens from position in key range using a supplied separator (default to '-').
+        """
+        return sep.join([str(k) for k in tokens[ min(key[0], len(tokens)) : min(key[1], len(tokens)) ]])
 
     @staticmethod
     def from_tokenized_lines(tokenized_lines: List[List[Union[RowCode, str]]], main: RowCode, accessories: List[RowCode], key: List[int] = [1, 3], sep: str = "-") -> Dict[List[Union[RowCode, str]], List[List[Union[RowCode, str]]]]:
-        lines_with_accessories = {}
-        main_line = None
+        lines_with_accessories = {}  # main-line-key: List of related lines]
+
+        current_main_line = None
         accessory_lines = []
 
         i = 0
@@ -62,25 +67,29 @@ class Accessories:
             if tokens[0] != main:
                 i += 1
                 continue
-            main_line = tokens
+            # start one
+            current_main_line = tokens
             i += 1
             if i < len(tokenized_lines):
                 tokens = tokenized_lines[i]
                 accessory_lines = []
-                while i < len(tokenized_lines) and main_line is not None:
+                while i < len(tokenized_lines) and current_main_line is not None:
                     tokens = tokenized_lines[i]
                     if tokens[0] in accessories:
                         accessory_lines.append(tokens)
                     elif tokens[0] == main:  # finished, start new one
-                        k = Accessories.key(tokens=main_line, key=key, sep=sep)
                         if len(accessory_lines) > 0:
+                            k = Accessories.key(tokens=current_main_line, key=key, sep=sep)
                             lines_with_accessories[k] = accessory_lines
                             accessory_lines = []
-                            main_line = tokens
+                            current_main_line = tokens
+                    else: # finished, no new one
+                        current_main_line = None
+                        accessory_lines = []
                     i += 1
 
-        if len(accessory_lines) > 0: # push last one if any
-            k = Accessories.key(tokens=main_line, key=key, sep=sep)
+        if current_main_line is not None and len(accessory_lines) > 0: # push last one if any
+            k = Accessories.key(tokens=current_main_line, key=key, sep=sep)
             lines_with_accessories[k] = accessory_lines
 
         return lines_with_accessories
@@ -89,6 +98,8 @@ class Accessories:
 # ######################################################
 #
 # E N T I T Y   H E L P E R   C L A S S E S
+#
+# (a class for a line code tokens)
 #
 # ######################################################
 #
@@ -100,14 +111,14 @@ class ActiveEdge:
     Identifies an edge as in a runway active zone.
     """
     zone: str  # departure, arrival, ils
-    runways: str  # up to 4 runways
+    runways: list  # up to 4 runways
 
     @staticmethod
     def from_tokenized_line(tokens: List[Union[RowCode, str]]) -> 'ActiveEdge':
         return ActiveEdge(zone=tokens[1], runways=tokens[2])
 
     def runway_list(self) -> List[str]:
-        return self.runways.split(",")
+        return self.runways # .split(",")
 
 
 @dataclass
@@ -431,10 +442,6 @@ class AFTime(AirportFlow):
         return AFTime(name=name, utc_start=tokens[1], utc_end=tokens[2])
 
 
-# ######################################################
-#
-# Runways In Use
-#
 @dataclass
 class RunwayInUse(AirportFlow):
     """
@@ -467,6 +474,7 @@ class VFRPattern(AirportFlow):
         return VFRPattern(name=name, runway=tokens[1], pattern=tokens[2])
 
 
+# { RowCode: Dataclass }
 AIRPORT_FLOWS = {
     RowCode.FLOW_WIND: AFWind,
     RowCode.FLOW_CEILING: AFCeiling,
@@ -530,7 +538,7 @@ class DetailedAirport(Airport):
         a = Accessories.from_tokenized_lines(tokenized_lines=self.tokenized_lines, main=RowCode.TAXI_ROUTE_EDGE, accessories=[RowCode.TAXI_ROUTE_HOLD])
         for e in self.taxi_network.edges:
             k = f"{e.node_begin}-{e.node_end}"
-            e.active_zones = [ActiveEdge(zone=t[1], runways=t[2]) for t in a[k]] if k in a else None
+            e.active_zones = [ActiveEdge(zone=t[1], runways=t[2].split(",")) for t in a[k]] if k in a else []
 
     @apt_cached_property
     def road_network(self) -> RoadNetwork:
@@ -569,9 +577,5 @@ class DetailedAirport(Airport):
     def airport_flows(self) -> List[AirportFlow]:
         a = Accessories.from_tokenized_lines(tokenized_lines=self.tokenized_lines, main=RowCode.FLOW_DEFINITION, accessories=AIRPORT_FLOWS.keys(), key=[1, 10], sep=" ")
         return reduce(add, [[AIRPORT_FLOWS.get(v[0]).from_tokenized_line(name=k, tokens=v) for v in acc] for k, acc in a.items()])
-        # flows = []
-        # for k, acc in a.items():
-        #     flows += [AIRPORT_FLOWS.get(v[0]).from_tokenized_line(name=k, tokens=v) for v in acc]
-        # return flows
 
 #
